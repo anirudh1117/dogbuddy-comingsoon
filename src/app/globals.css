@@ -1,0 +1,59 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f7f2ec;
+  --foreground: #1e2a24;
+  --accent: #cf8d57;
+  --accent-soft: #f7d9bd;
+  --ink-soft: #526258;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-plus-jakarta);
+  --font-display: var(--font-cormorant);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background:
+    radial-gradient(circle at 8% 12%, rgba(207, 141, 87, 0.2), transparent 36%),
+    radial-gradient(circle at 86% 20%, rgba(141, 196, 173, 0.2), transparent 40%),
+    radial-gradient(circle at 54% 82%, rgba(255, 230, 194, 0.36), transparent 44%),
+    var(--background);
+  color: var(--foreground);
+  font-family: var(--font-plus-jakarta), "Segoe UI", sans-serif;
+  line-height: 1.5;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-cormorant), Georgia, serif;
+  letter-spacing: 0.01em;
+}
+
+::selection {
+  background: rgba(207, 141, 87, 0.35);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
