@@ -6,13 +6,13 @@ import { RiSparklingLine } from "react-icons/ri";
 import { toast } from "sonner";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const STORAGE_KEY = "tailsbuddy_notify_emails";
 
 export function NotifyForm() {
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (!EMAIL_PATTERN.test(email)) {
@@ -21,20 +21,44 @@ export function NotifyForm() {
     }
 
     setError("");
+    setIsSubmitting(true);
 
-    if (typeof window !== "undefined") {
-      const existing = localStorage.getItem(STORAGE_KEY);
-      const emails = existing ? (JSON.parse(existing) as string[]) : [];
+    try {
+      const response = await fetch("/api/notify", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+      });
 
-      if (!emails.includes(email)) {
-        emails.push(email);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(emails));
+      const payload = (await response.json()) as {
+        message?: string;
+        alreadyExists?: boolean;
+      };
+
+      if (!response.ok) {
+        setError(payload.message ?? "Something went wrong. Please try again.");
+        return;
       }
-    }
 
-    console.log("TailsBuddy notify signup", { email, time: new Date().toISOString() });
-    toast.success("You are on the list. We will notify you soon.");
-    setEmail("");
+      console.log("TailsBuddy notify signup", {
+        email,
+        time: new Date().toISOString(),
+      });
+
+      if (payload.alreadyExists) {
+        toast.info(payload.message ?? "You are already on the list.");
+      } else {
+        toast.success(payload.message ?? "You are on the list. We will notify you soon.");
+      }
+
+      setEmail("");
+    } catch {
+      setError("Could not save your email right now. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -71,10 +95,11 @@ export function NotifyForm() {
             type="submit"
             whileHover={{ y: -2, scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
+            disabled={isSubmitting}
             className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#1f6b52] via-[#217a5b] to-[#209a70] px-6 text-sm font-semibold text-white shadow-[0_15px_35px_rgba(32,116,86,0.35)] transition hover:from-[#195842] hover:to-[#1a7a57] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#96c6b2]"
           >
             <RiSparklingLine aria-hidden="true" className="text-base" />
-            Notify Me
+            {isSubmitting ? "Saving..." : "Notify Me"}
           </motion.button>
         </div>
         {error ? (
