@@ -8,7 +8,9 @@ type NotifyRecord = {
 };
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const DATA_DIR = path.join(process.cwd(), "data");
+const DATA_DIR =
+  process.env.NOTIFY_DATA_DIR ??
+  (process.env.VERCEL ? path.join("/tmp", "tailsbuddy-notify") : path.join(process.cwd(), "data"));
 const DATA_FILE = path.join(DATA_DIR, "notify-emails.json");
 
 async function readRecords(): Promise<NotifyRecord[]> {
@@ -72,9 +74,11 @@ export async function POST(request: Request) {
         : "You are on the list. We will notify you soon.",
       alreadyExists,
     });
-  } catch {
+  } catch (error) {
+    console.error("Notify API error", error);
+
     return NextResponse.json(
-      { message: "Something went wrong. Please try again." },
+      { message: "Temporary storage is unavailable right now. Please try again." },
       { status: 500 }
     );
   }
