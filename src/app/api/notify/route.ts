@@ -1,46 +1,7 @@
-import { promises as fs } from "node:fs";
-import path from "node:path";
 import { NextResponse } from "next/server";
-
-type NotifyRecord = {
-  email: string;
-  createdAt: string;
-};
+import { readEmails, writeEmails } from "@/app/api/notify/storage";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const DATA_DIR =
-  process.env.NOTIFY_DATA_DIR ??
-  (process.env.VERCEL ? path.join("/tmp", "tailsbuddy-notify") : path.join(process.cwd(), "data"));
-const DATA_FILE = path.join(DATA_DIR, "notify-emails.json");
-
-async function readRecords(): Promise<NotifyRecord[]> {
-  try {
-    const raw = await fs.readFile(DATA_FILE, "utf-8");
-    const parsed: unknown = JSON.parse(raw);
-
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-
-    return parsed.filter((item): item is NotifyRecord => {
-      return (
-        typeof item === "object" &&
-        item !== null &&
-        "email" in item &&
-        "createdAt" in item &&
-        typeof item.email === "string" &&
-        typeof item.createdAt === "string"
-      );
-    });
-  } catch {
-    return [];
-  }
-}
-
-async function writeRecords(records: NotifyRecord[]): Promise<void> {
-  await fs.mkdir(DATA_DIR, { recursive: true });
-  await fs.writeFile(DATA_FILE, JSON.stringify(records, null, 2), "utf-8");
-}
 
 export async function POST(request: Request) {
   try {
@@ -57,15 +18,12 @@ export async function POST(request: Request) {
       );
     }
 
-    const records = await readRecords();
-    const alreadyExists = records.some((item) => item.email === email);
+    const emails = await readEmails();
+    const alreadyExists = emails.includes(email);
 
     if (!alreadyExists) {
-      records.push({
-        email,
-        createdAt: new Date().toISOString(),
-      });
-      await writeRecords(records);
+      emails.push(email);
+      await writeEmails(emails);
     }
 
     return NextResponse.json({
